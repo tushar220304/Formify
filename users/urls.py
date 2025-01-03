@@ -1,8 +1,10 @@
 # Radhe Radhe
 
-from .views import *
-from django.urls import path
+from users.views import UserProfileViewset
+from rest_framework.routers import DefaultRouter
 
-urlpatterns = [
+routers = DefaultRouter()
 
-]
+routers.register(r'users', UserProfileViewset, basename='user')
+
+urlpatterns = routers.urls

@@ -1,3 +1,6 @@
-from django.contrib import admin
+# Radhe Radhe
 
-# Register your models here.
+from django.contrib import admin
+from users.models import *
+
+admin.site.register(UserProfile)

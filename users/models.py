@@ -2,9 +2,11 @@
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
+from user_auth.utils import generate_six_digit_code
 
 
-class CustomUserManager(BaseUserManager):
+class UserProfileManager(BaseUserManager):
+
     def create_user(self, email, password=None, **extra_fields):
         """
         Creates and saves a regular user with the given email and password.
@@ -14,6 +16,8 @@ class CustomUserManager(BaseUserManager):
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
+        user.active = False
+        user.code = generate_six_digit_code()
         user.save(using=self._db)
         return user
 
@@ -21,6 +25,7 @@ class CustomUserManager(BaseUserManager):
         """
         Creates and saves a superuser with the given email and password.
         """
+        extra_fields.setdefault('active', True)
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
 
@@ -30,6 +35,9 @@ class CustomUserManager(BaseUserManager):
             raise ValueError('Superuser must have is_superuser=True.')
 
         return self.create_user(email, password, **extra_fields)
+    
+    def get_active(self):
+        return UserProfile.objects.filter(active=True)
 
 
 class UserProfile(AbstractBaseUser, PermissionsMixin):
@@ -37,9 +45,13 @@ class UserProfile(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255, blank=True, null=True)
     active = models.BooleanField(default=False)
-    permissions = models.JSONField()
+    permissions = models.JSONField(default=dict)
+    code = models.IntegerField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now=True)
     updated_at = models.DateTimeField(auto_now_add=True)
+    is_staff = models.BooleanField(default=False)  # if True user can access admin page
+
+    objects = UserProfileManager()  
 
     USERNAME_FIELD = 'email'  # Login identifier
     REQUIRED_FIELDS = ['first_name'] 
